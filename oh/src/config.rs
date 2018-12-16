@@ -5,7 +5,7 @@ pub enum ConfigError {
     PathExists,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OHApp {
     pub path: ::std::path::PathBuf,
     pub search_paths: ::std::vec::Vec<::std::path::PathBuf>,
@@ -46,7 +46,9 @@ fn get_or_create_data_dir(
     ::std::fs::create_dir(path)?;
     ::std::fs::create_dir(path.join(::std::path::PathBuf::from("db")))?;
     let mut file = ::std::fs::File::create(path.join(::std::path::PathBuf::from("oh.yaml")))?;
-    file.write_all(b"search-paths:\n    - /home/lachlan/")?;
+    file.write_all(
+        b"search-paths:\n    - /home/lachlan/\nexclude-paths:\n    - /home/lachlan/bin",
+    )?;
     Ok(::std::path::PathBuf::from(path))
 }
 

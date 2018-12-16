@@ -1,9 +1,9 @@
-use futures::prelude::*;
+use tokio::prelude::*;
 use walkdir::WalkDir;
 // &Fn(walkdir::DirEntry) -> bool
-struct Walker<'walk> {
+struct Walker {
     iter: walkdir::IntoIter,
-    app: &'walk crate::config::OHApp,
+    app: crate::config::OHApp,
 }
 
 fn is_hidden(entry: &::walkdir::DirEntry) -> bool {
@@ -13,10 +13,10 @@ fn is_hidden(entry: &::walkdir::DirEntry) -> bool {
         .map_or(false, |s| s != ".git" && s.starts_with('.'))
 }
 
-impl<'walk> Walker<'walk> {
+impl Walker {
     fn new(
-        dir: &::std::path::Path,
-        app: &'walk crate::config::OHApp,
+        dir: std::path::PathBuf,
+        app: crate::config::OHApp,
     ) -> Result<Self, Box<::std::error::Error>> {
         let root = dir.canonicalize()?;
         Ok(Walker {
@@ -26,24 +26,29 @@ impl<'walk> Walker<'walk> {
     }
 }
 
-pub fn walk_dir(
+pub fn walk_dir<S: crate::sinks::ObjectSink + Send + Sync + 'static>(
     dir: &::std::path::Path,
-    sink: &mut crate::sinks::ObjectSink,
+    sink: S,
     app: &crate::config::OHApp,
 ) {
-    let mut stream = match Walker::new(dir, app) {
+    let mut stream = match Walker::new(dir.to_path_buf(), app.clone()) {
         Ok(w) => w,
         Err(_) => {
             return;
         }
     };
 
-    while let Ok(Async::Ready(Some(path))) = stream.poll() {
-        sink.push(&*path);
-    }
+    tokio::run(
+        stream
+            .for_each(move |path| {
+                sink.push(&*path);
+                Ok(())
+            })
+            .or_else(|e| Err(())),
+    );
 }
 
-impl<'walk> Stream for Walker<'walk> {
+impl Stream for Walker {
     type Item = Box<crate::objects::Object>;
     type Error = ::std::io::Error;
 
@@ -51,10 +56,7 @@ impl<'walk> Stream for Walker<'walk> {
         loop {
             let entry = match self.iter.next() {
                 None => {
-                    return Err(::std::io::Error::new(
-                        ::std::io::ErrorKind::Other,
-                        "No objects available.",
-                    ));
+                    return Ok(futures::Async::Ready(None));
                 }
                 Some(Ok(entry)) => entry,
                 Some(Err(_)) => {

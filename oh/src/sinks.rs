@@ -90,15 +90,12 @@ impl ObjectSink for LMDBSink {
         for hash in hashes {
             {
                 let mut cursor = tx.open_ro_cursor(self.db).expect("Failed to get cursor.");
-                match cursor.iter_dup_of(&&hash[..]) {
-                    Ok(iterator) => {
-                        for (_key, value) in iterator {
-                            if &value[..] == &location[..] {
-                                return;
-                            }
+                if let Ok(iterator) = cursor.iter_dup_of(&&hash[..]) {
+                    for (_key, value) in iterator {
+                        if value[..] == location[..] {
+                            return;
                         }
                     }
-                    Err(_) => {}
                 }
             }
             tx.put(

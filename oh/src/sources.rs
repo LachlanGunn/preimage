@@ -21,12 +21,16 @@ impl<'walk> Walker<'walk> {
         let root = dir.canonicalize()?;
         Ok(Walker {
             iter: WalkDir::new(root).into_iter(),
-            app: app,
+            app,
         })
     }
 }
 
-pub fn walk_dir(dir: &::std::path::Path, sink: &mut crate::sinks::ObjectSink, app: &crate::config::OHApp) {
+pub fn walk_dir(
+    dir: &::std::path::Path,
+    sink: &mut crate::sinks::ObjectSink,
+    app: &crate::config::OHApp,
+) {
     let mut stream = match Walker::new(dir, app) {
         Ok(w) => w,
         Err(_) => {
@@ -50,7 +54,7 @@ impl<'walk> Stream for Walker<'walk> {
                     return Err(::std::io::Error::new(
                         ::std::io::ErrorKind::Other,
                         "No objects available.",
-                    ))
+                    ));
                 }
                 Some(Ok(entry)) => entry,
                 Some(Err(_)) => {

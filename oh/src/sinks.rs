@@ -1,6 +1,7 @@
 extern crate data_encoding;
 extern crate lmdb;
 
+use self::lmdb::Cursor;
 use self::lmdb::Transaction;
 
 #[derive(Debug)]
@@ -25,7 +26,7 @@ impl ::std::fmt::Display for LookupError {
 impl ::std::error::Error for LookupError {}
 
 pub trait ObjectSink {
-    fn push(&self, object: &::objects::Object);
+    fn push(&self, object: &crate::objects::Object);
     fn lookup(&self, key: &[u8]) -> Result<String, Box<::std::error::Error>>;
 }
 
@@ -33,7 +34,7 @@ pub trait ObjectSink {
 pub struct DebugSink {}
 
 impl ObjectSink for DebugSink {
-    fn push(&self, object: &::objects::Object) {
+    fn push(&self, object: &crate::objects::Object) {
         let hashes = match object.hash() {
             Ok(h) => h,
             Err(_) => return,
@@ -59,7 +60,7 @@ pub struct LMDBSink {
 }
 
 impl LMDBSink {
-    pub fn new(app: &::config::OHApp) -> Result<LMDBSink, Box<::std::error::Error>> {
+    pub fn new(app: &crate::config::OHApp) -> Result<LMDBSink, Box<::std::error::Error>> {
         let env_path = app.path.join(::std::path::PathBuf::from("db"));
         let environment = lmdb::Environment::new()
             .set_map_size(0x4000_0000) // 1GiB
@@ -73,7 +74,7 @@ impl LMDBSink {
 }
 
 impl ObjectSink for LMDBSink {
-    fn push(&self, object: &::objects::Object) {
+    fn push(&self, object: &crate::objects::Object) {
         let mut tx = match self.env.begin_rw_txn() {
             Ok(tx) => tx,
             Err(_) => return,
@@ -87,12 +88,26 @@ impl ObjectSink for LMDBSink {
         let location = object.to_str().into_bytes();
 
         for hash in hashes {
+            {
+                let mut cursor = tx.open_ro_cursor(self.db).expect("Failed to get cursor.");
+                match cursor.iter_dup_of(&&hash[..]) {
+                    Ok(iterator) => {
+                        for (_key, value) in iterator {
+                            if &value[..] == &location[..] {
+                                return;
+                            }
+                        }
+                    }
+                    Err(_) => {}
+                }
+            }
             tx.put(
                 self.db,
                 &&hash[..],
                 &&location[..],
                 lmdb::WriteFlags::default(),
-            ).expect("Database write failed.");
+            )
+            .expect("Database write failed.");
         }
         tx.commit().expect("Database commit failed.");
     }

@@ -2,7 +2,7 @@ extern crate data_encoding;
 extern crate git2;
 extern crate sha2;
 
-use objects::Object;
+use crate::objects::Object;
 
 use sha2::Digest;
 
@@ -11,7 +11,7 @@ pub struct GitCommit {
     pub id: git2::Oid,
 }
 
-impl ::objects::Object for GitCommit {
+impl crate::objects::Object for GitCommit {
     fn hash(&self) -> Result<::std::vec::Vec<::std::vec::Vec<u8>>, Box<::std::error::Error>> {
         Ok(vec![::std::vec::Vec::from(self.id.as_bytes())])
     }
@@ -28,7 +28,7 @@ pub struct GitFile<'a> {
     pub id: &'a [u8],
 }
 
-impl<'a> ::objects::Object for GitFile<'a> {
+impl<'a> crate::objects::Object for GitFile<'a> {
     fn hash(&self) -> Result<::std::vec::Vec<::std::vec::Vec<u8>>, Box<::std::error::Error>> {
         Ok(vec![
             ::std::vec::Vec::from(self.id),
@@ -52,7 +52,7 @@ pub fn walk_tree(
     commit: &git2::Commit,
     commit_info: &GitCommit,
     repository: &git2::Repository,
-    sink: &mut ::sinks::ObjectSink,
+    sink: &mut crate::sinks::ObjectSink,
 ) {
     for entry in tree.iter() {
         let name = match entry.name() {
@@ -104,7 +104,7 @@ pub fn walk_tree(
     }
 }
 
-pub fn walk_repo(path: &::std::path::Path, sink: &mut ::sinks::ObjectSink) {
+pub fn walk_repo(path: &::std::path::Path, sink: &mut crate::sinks::ObjectSink) {
     let repo = match git2::Repository::open(path) {
         Ok(x) => x,
         Err(_) => return,

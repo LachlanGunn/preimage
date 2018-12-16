@@ -15,7 +15,8 @@ pub fn get_app() -> clap::App<'static, 'static> {
                         .required(false)
                         .index(1),
                 ),
-        ).subcommand(
+        )
+        .subcommand(
             clap::SubCommand::with_name("find")
                 .about("Find the location of the object represented by <HASH>")
                 .arg(

@@ -8,7 +8,7 @@ pub struct SimpleFile {
     pub path: ::std::path::PathBuf,
 }
 
-impl ::objects::Object for SimpleFile {
+impl crate::objects::Object for SimpleFile {
     fn hash(&self) -> Result<::std::vec::Vec<::std::vec::Vec<u8>>, Box<::std::error::Error>> {
         let mut fh = ::std::fs::File::open(&self.path)?;
 

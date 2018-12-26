@@ -33,6 +33,12 @@ pub trait ObjectSink {
 #[allow(dead_code)]
 pub struct DebugSink {}
 
+impl DebugSink {
+    pub fn new(app: &crate::config::OHApp) -> Result<Self, Box<::std::error::Error>> {
+        Ok(DebugSink {})
+    }
+}
+
 impl ObjectSink for DebugSink {
     fn push(&self, object: &crate::objects::Object) {
         let hashes = match object.hash() {

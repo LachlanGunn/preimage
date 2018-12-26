@@ -1,9 +1,10 @@
 use tokio::prelude::*;
 use walkdir::WalkDir;
 // &Fn(walkdir::DirEntry) -> bool
-struct Walker {
+struct Walker<'walk> {
     iter: walkdir::IntoIter,
     app: crate::config::OHApp,
+    git_walker: Option<crate::sources::git::RepoWalker<'walk>>,
 }
 
 fn is_hidden(entry: &::walkdir::DirEntry) -> bool {
@@ -13,7 +14,7 @@ fn is_hidden(entry: &::walkdir::DirEntry) -> bool {
         .map_or(false, |s| s != ".git" && s.starts_with('.'))
 }
 
-impl Walker {
+impl<'walk> Walker<'walk> {
     fn new(
         dir: std::path::PathBuf,
         app: crate::config::OHApp,
@@ -22,6 +23,7 @@ impl Walker {
         Ok(Walker {
             iter: WalkDir::new(root).into_iter(),
             app,
+            git_walker: None,
         })
     }
 }
@@ -31,7 +33,7 @@ pub fn walk_dir<S: crate::sinks::ObjectSink + Send + Sync + 'static>(
     sink: S,
     app: &crate::config::OHApp,
 ) {
-    let mut stream = match Walker::new(dir.to_path_buf(), app.clone()) {
+    let stream = match Walker::new(dir.to_path_buf(), app.clone()) {
         Ok(w) => w,
         Err(_) => {
             return;
@@ -44,15 +46,24 @@ pub fn walk_dir<S: crate::sinks::ObjectSink + Send + Sync + 'static>(
                 sink.push(&*path);
                 Ok(())
             })
-            .or_else(|e| Err(())),
+            .or_else(|_| Err(())),
     );
 }
 
-impl Stream for Walker {
+impl<'walk> Stream for Walker<'walk> {
     type Item = Box<crate::objects::Object>;
     type Error = ::std::io::Error;
 
     fn poll(&mut self) -> Poll<Option<Box<crate::objects::Object>>, ::std::io::Error> {
+        if let Some(ref mut git_walker) = self.git_walker {
+            let result = git_walker.poll();
+            if let Ok(futures::Async::Ready(None)) = result {
+                self.git_walker = None;
+            } else {
+                return result;
+            }
+        }
+
         loop {
             let entry = match self.iter.next() {
                 None => {
@@ -66,18 +77,27 @@ impl Stream for Walker {
 
             if self.app.exclude_paths.contains(entry.path()) {
                 self.iter.skip_current_dir();
-            } else if (entry.file_type().is_dir()
+            } else if entry.file_type().is_dir()
                 && entry
                     .path()
                     .file_name()
                     .unwrap_or(&::std::ffi::OsStr::new(""))
-                    == ".git")
-                || is_hidden(&entry)
+                    == ".git"
             {
                 if entry.file_type().is_dir() {
                     self.iter.skip_current_dir();
                 }
-            //::objects::git::walk_repo(entry.path().parent().unwrap(), sink);
+
+                let parent_dir = entry
+                    .path()
+                    .parent()
+                    .expect("Failed to get parent path")
+                    .to_path_buf();
+                self.git_walker = Some(crate::sources::git::RepoWalker::new(parent_dir)?);
+            } else if is_hidden(&entry) {
+                if entry.file_type().is_dir() {
+                    self.iter.skip_current_dir();
+                }
             } else {
                 return Ok(futures::Async::Ready(Some(Box::from(
                     crate::objects::file::SimpleFile {

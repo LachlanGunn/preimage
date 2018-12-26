@@ -13,6 +13,8 @@ mod sources;
 
 use crate::sinks::ObjectSink;
 
+type Sink = sinks::DebugSink;
+
 fn main() {
     let matches = cli::get_app().get_matches();
 
@@ -21,14 +23,13 @@ fn main() {
     if let Some(sc_matches) = matches.subcommand_matches("scan") {
         match sc_matches.value_of("DIRECTORY") {
             Some(dir) => {
-                let mut sink = sinks::LMDBSink::new(&app_config).expect("Failed to open database.");
-                sources::walk_dir(&std::path::PathBuf::from(dir), sink, &app_config);
+                let sink = Sink::new(&app_config).expect("Failed to open database.");
+                sources::file::walk_dir(&std::path::PathBuf::from(dir), sink, &app_config);
             }
             None => {
                 for path in &app_config.search_paths {
-                    let mut sink =
-                        sinks::LMDBSink::new(&app_config).expect("Failed to open database.");
-                    sources::walk_dir(&path, sink, &app_config);
+                    let sink = Sink::new(&app_config).expect("Failed to open database.");
+                    sources::file::walk_dir(&path, sink, &app_config);
                 }
             }
         }
@@ -36,7 +37,7 @@ fn main() {
         let search_hash = data_encoding::HEXLOWER_PERMISSIVE
             .decode(matches.value_of("HASH").unwrap().as_bytes())
             .expect("Bad hash format.");
-        let mut sink = sinks::LMDBSink::new(&app_config).expect("Failed to open database.");
+        let sink = Sink::new(&app_config).expect("Failed to open database.");
         match sink.lookup(&search_hash) {
             Ok(result) => println!("{}", result),
             Err(err) => {

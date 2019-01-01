@@ -1,9 +1,6 @@
 use crate::objects::git::*;
 use tokio::prelude::*;
 
-use crate::objects::Object;
-use sha2::Digest;
-
 pub struct RepoWalker<'walk> {
     repo: git2::Repository,
     iter: *mut git2::Revwalk<'walk>,
@@ -70,11 +67,6 @@ impl<'walk> Stream for RepoWalker<'walk> {
         let commit_id = match rev {
             Ok(x) => x,
             Err(_) => return Ok(Async::Ready(None)),
-        };
-
-        let commit = match self.repo.find_commit(commit_id) {
-            Ok(c) => c,
-            Err(_) => return Ok(Async::NotReady),
         };
 
         let commit_info = GitCommit {

@@ -1,9 +1,9 @@
 extern crate clap;
 
 pub fn get_app() -> clap::App<'static, 'static> {
-    clap::App::new("oh")
+    clap::App::new("preimage")
         .version("0.1")
-        .author("Lachlan Gunn <lachlan@twopif.net>")
+        .author("Lachlan Gunn <lachlan@gunn.ee>")
         .about("Locate data by its hash.")
         .setting(clap::AppSettings::SubcommandRequiredElseHelp)
         .subcommand(

@@ -3,7 +3,7 @@ use walkdir::WalkDir;
 // &Fn(walkdir::DirEntry) -> bool
 struct Walker<'walk> {
     iter: walkdir::IntoIter,
-    app: crate::config::OHApp,
+    app: crate::config::PreimageApp,
     git_walker: Option<crate::sources::git::RepoWalker<'walk>>,
 }
 
@@ -17,7 +17,7 @@ fn is_hidden(entry: &::walkdir::DirEntry) -> bool {
 impl<'walk> Walker<'walk> {
     fn new(
         dir: std::path::PathBuf,
-        app: crate::config::OHApp,
+        app: crate::config::PreimageApp,
     ) -> Result<Self, Box<::std::error::Error>> {
         let root = dir.canonicalize()?;
         Ok(Walker {
@@ -31,7 +31,7 @@ impl<'walk> Walker<'walk> {
 pub fn walk_dir<S: crate::sinks::ObjectSink + Send + Sync + 'static>(
     dir: &::std::path::Path,
     sink: S,
-    app: &crate::config::OHApp,
+    app: &crate::config::PreimageApp,
 ) {
     let stream = match Walker::new(dir.to_path_buf(), app.clone()) {
         Ok(w) => w,

@@ -7,5 +7,5 @@ fn main() {
     };
 
     let mut app = get_app();
-    app.gen_completions("oh", clap::Shell::Bash, outdir);
+    app.gen_completions("preimage", clap::Shell::Bash, outdir);
 }

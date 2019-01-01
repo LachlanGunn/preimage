@@ -6,7 +6,7 @@ pub enum ConfigError {
 }
 
 #[derive(Debug, Clone)]
-pub struct OHApp {
+pub struct PreimageApp {
     pub path: ::std::path::PathBuf,
     pub search_paths: ::std::vec::Vec<::std::path::PathBuf>,
     pub exclude_paths: ::std::collections::BTreeSet<::std::path::PathBuf>,
@@ -16,7 +16,7 @@ impl ::std::fmt::Display for ConfigError {
     fn fmt(&self, fmt: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         write!(
             fmt,
-            "OH Config Error: {}",
+            "Preimage Config Error: {}",
             match self {
                 ConfigError::PathExists => "Path already exists.",
             }
@@ -45,23 +45,23 @@ fn get_or_create_data_dir(
 
     ::std::fs::create_dir(path)?;
     ::std::fs::create_dir(path.join(::std::path::PathBuf::from("db")))?;
-    let mut file = ::std::fs::File::create(path.join(::std::path::PathBuf::from("oh.yaml")))?;
+    let mut file = ::std::fs::File::create(path.join(::std::path::PathBuf::from("preimage.yaml")))?;
     file.write_all(
         b"search-paths:\n    - /home/lachlan/\nexclude-paths:\n    - /home/lachlan/bin",
     )?;
     Ok(::std::path::PathBuf::from(path))
 }
 
-impl OHApp {
-    pub fn new(path: &::std::path::Path) -> Result<OHApp, Box<::std::error::Error>> {
+impl PreimageApp {
+    pub fn new(path: &::std::path::Path) -> Result<PreimageApp, Box<::std::error::Error>> {
         let data_dir = get_or_create_data_dir(path)?;
 
         let mut settings = config::Config::default();
         settings.merge(config::File::from(
-            path.join(::std::path::PathBuf::from("oh.yaml")),
+            path.join(::std::path::PathBuf::from("preimage.yaml")),
         ))?;
 
-        Ok(OHApp {
+        Ok(PreimageApp {
             path: data_dir,
             search_paths: settings
                 .get_array("search-paths")?

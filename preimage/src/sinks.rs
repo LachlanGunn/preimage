@@ -33,8 +33,9 @@ pub trait ObjectSink {
 #[allow(dead_code)]
 pub struct DebugSink {}
 
+#[allow(dead_code)]
 impl DebugSink {
-    pub fn new(app: &crate::config::OHApp) -> Result<Self, Box<::std::error::Error>> {
+    pub fn new(_app: &crate::config::PreimageApp) -> Result<Self, Box<::std::error::Error>> {
         Ok(DebugSink {})
     }
 }
@@ -66,7 +67,7 @@ pub struct LMDBSink {
 }
 
 impl LMDBSink {
-    pub fn new(app: &crate::config::OHApp) -> Result<LMDBSink, Box<::std::error::Error>> {
+    pub fn new(app: &crate::config::PreimageApp) -> Result<LMDBSink, Box<::std::error::Error>> {
         let env_path = app.path.join(::std::path::PathBuf::from("db"));
         let environment = lmdb::Environment::new()
             .set_map_size(0x4000_0000) // 1GiB

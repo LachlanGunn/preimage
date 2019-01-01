@@ -1,7 +1,7 @@
 [package]
-name = "oh"
+name = "preimage"
 version = "0.1.0"
-authors = ["Lachlan Gunn <lachlan@twopif.net>"]
+authors = ["Lachlan Gunn <lachlan@gunn.ee>"]
 
 build = "build.rs"
 

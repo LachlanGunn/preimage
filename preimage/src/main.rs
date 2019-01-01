@@ -13,12 +13,12 @@ mod sources;
 
 use crate::sinks::ObjectSink;
 
-type Sink = sinks::DebugSink;
+type Sink = sinks::LMDBSink;
 
 fn main() {
     let matches = cli::get_app().get_matches();
 
-    let app_config = config::OHApp::new(&std::path::PathBuf::from("/home/lachlan/.oh")).unwrap();
+    let app_config = config::PreimageApp::new(&std::path::PathBuf::from("/home/lachlan/.preimage")).unwrap();
 
     if let Some(sc_matches) = matches.subcommand_matches("scan") {
         match sc_matches.value_of("DIRECTORY") {

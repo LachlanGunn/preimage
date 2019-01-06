@@ -3,27 +3,37 @@ extern crate sha2;
 use std::io::Read;
 
 use sha2::Digest;
+use tokio::prelude::*;
+
+const BLOCK_SIZE: usize = 4096;
 
 pub struct SimpleFile {
     pub path: ::std::path::PathBuf,
 }
 
+
+fn hash_file(state: (tokio::fs::File, sha2::Sha256)) -> Box<Future<Item = future::Loop<std::vec::Vec<std::vec::Vec<u8>>,(tokio::fs::File, sha2::Sha256)>, Error = tokio::io::Error>> {
+
+    let (mut fh, mut hasher) = state;
+    let buf = vec![0u8; BLOCK_SIZE];
+    Box::from(tokio::io::read(fh, buf).and_then(move |(fh, buf, count)| {
+        hasher.input(&buf[0..count]);
+
+        if count == BLOCK_SIZE {
+            futures::future::ok(future::Loop::Continue((fh, hasher)))
+        } else {
+            //let hasher = std::rc::try_unwrap(hasher_rc);
+            futures::future::ok(future::Loop::Break(vec![std::vec::Vec::from(&hasher.result()[..])]))
+        }
+    }))
+}
+
 impl crate::objects::Object for SimpleFile {
     fn hash(&self) -> Result<::std::vec::Vec<::std::vec::Vec<u8>>, Box<::std::error::Error>> {
-        let mut fh = ::std::fs::File::open(&self.path)?;
+        let mut file_future = tokio::fs::File::open(self.path.to_path_buf());
 
-        const BLOCK_SIZE: usize = 4096;
-        let mut buf = [0u8; BLOCK_SIZE];
         let mut hasher = sha2::Sha256::default();
-        loop {
-            let count = fh.read(&mut buf)?;
-            hasher.input(&buf[0..count]);
-            if count < BLOCK_SIZE {
-                break;
-            }
-        }
-
-        Ok(vec![::std::vec::Vec::from(&hasher.result()[..])])
+        file_future.and_then(|fh| future::loop_fn((fh, hasher), &hash_file)).or_else(|e| Err(Box::from(e))).wait()
     }
 
     fn to_str(&self) -> String {

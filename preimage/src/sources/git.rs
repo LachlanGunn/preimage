@@ -46,8 +46,8 @@ impl<'walk> RepoWalker<'walk> {
         };
 
         Ok(RepoWalker {
-            repo: repo,
-            iter: iter,
+            repo,
+            iter,
         })
     }
 }
@@ -74,6 +74,6 @@ impl<'walk> Stream for RepoWalker<'walk> {
             id: commit_id,
         };
 
-        return Ok(Async::Ready(Some(Box::from(commit_info))));
+        Ok(Async::Ready(Some(Box::from(commit_info))))
     }
 }

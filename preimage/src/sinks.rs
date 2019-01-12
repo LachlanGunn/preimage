@@ -61,11 +61,13 @@ impl ObjectSink for DebugSink {
     }
 }
 
+#[allow(dead_code)]
 pub struct LMDBSink {
     env: lmdb::Environment,
     db: lmdb::Database,
 }
 
+#[allow(dead_code)]
 impl LMDBSink {
     pub fn new(app: &crate::config::PreimageApp) -> Result<LMDBSink, Box<::std::error::Error>> {
         let env_path = app.path.join(::std::path::PathBuf::from("db"));

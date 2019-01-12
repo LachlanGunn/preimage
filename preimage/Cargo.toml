@@ -19,6 +19,7 @@ lmdb = "^0.8"
 clap = "^2"
 futures = "^0.1"
 tokio = "^0.1"
+failure = "^0.1"
 
 [build-dependencies]
 clap = "^2"

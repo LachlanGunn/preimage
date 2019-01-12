@@ -30,9 +30,17 @@ impl ::std::error::Error for ConfigError {
     }
 }
 
+fn get_default_config() -> Result<std::vec::Vec<u8>,Box<std::error::Error>> {
+    let home = std::env::var("HOME")?;
+    Ok(format!("search-paths:
+  - {}
+exclude-paths:
+  - {}/bin", home, home).into_bytes())
+}
+
 fn get_or_create_data_dir(
     path: &::std::path::Path,
-) -> Result<::std::path::PathBuf, Box<::std::error::Error>> {
+) -> Result<::std::path::PathBuf,Box<std::error::Error>> {
     use std::io::Write;
 
     if path.is_dir() {
@@ -40,15 +48,13 @@ fn get_or_create_data_dir(
     }
 
     if path.exists() {
-        return Err(Box::new(ConfigError::PathExists));
+        return Err(Box::from(ConfigError::PathExists));
     }
 
     ::std::fs::create_dir(path)?;
     ::std::fs::create_dir(path.join(::std::path::PathBuf::from("db")))?;
     let mut file = ::std::fs::File::create(path.join(::std::path::PathBuf::from("preimage.yaml")))?;
-    file.write_all(
-        b"search-paths:\n    - /home/lachlan/\nexclude-paths:\n    - /home/lachlan/bin",
-    )?;
+    file.write_all(&get_default_config()?)?;
     Ok(::std::path::PathBuf::from(path))
 }
 

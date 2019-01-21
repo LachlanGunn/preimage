@@ -7,19 +7,15 @@ use self::lmdb::Transaction;
 #[derive(Debug)]
 pub enum LookupError {
     NotFound,
-    LookupFailed,
+    LookupFailed(failure::Error),
 }
 
 impl ::std::fmt::Display for LookupError {
     fn fmt(&self, fmt: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        write!(
-            fmt,
-            "{}",
-            match self {
-                LookupError::NotFound => "Key not found",
-                LookupError::LookupFailed => "Lookup failed",
-            }
-        )
+        match self {
+            LookupError::NotFound => write!(fmt, "Key not found"),
+            LookupError::LookupFailed(e) => write!(fmt, "Lookup failed: {}", e),
+        }
     }
 }
 
@@ -57,7 +53,7 @@ impl ObjectSink for DebugSink {
     }
 
     fn lookup(&self, _: &[u8]) -> Result<String, Box<::std::error::Error>> {
-        Err(Box::new(LookupError::LookupFailed))
+        unimplemented!("Debug sink does not support lookup.");
     }
 }
 
@@ -123,7 +119,11 @@ impl ObjectSink for LMDBSink {
         let result = match tx.get(self.db, &key) {
             Ok(v) => v,
             Err(lmdb::Error::NotFound) => return Err(Box::new(LookupError::NotFound)),
-            Err(_) => return Err(Box::new(LookupError::LookupFailed)),
+            Err(err) => {
+                return Err(Box::new(LookupError::LookupFailed(
+                    failure::Error::from_boxed_compat(Box::from(err)),
+                )));
+            }
         };
         Ok(String::from_utf8(result.to_vec())?)
     }

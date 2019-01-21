@@ -1,7 +1,7 @@
 extern crate config;
 
 #[derive(Debug)]
-pub enum ConfigError {
+pub enum Error {
     PathExists,
 }
 
@@ -12,35 +12,39 @@ pub struct PreimageApp {
     pub exclude_paths: ::std::collections::BTreeSet<::std::path::PathBuf>,
 }
 
-impl ::std::fmt::Display for ConfigError {
+impl ::std::fmt::Display for Error {
     fn fmt(&self, fmt: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         write!(
             fmt,
             "Preimage Config Error: {}",
             match self {
-                ConfigError::PathExists => "Path already exists.",
+                Error::PathExists => "Path already exists.",
             }
         )
     }
 }
 
-impl ::std::error::Error for ConfigError {
+impl ::std::error::Error for Error {
     fn cause(&self) -> Option<&::std::error::Error> {
         None
     }
 }
 
-fn get_default_config() -> Result<std::vec::Vec<u8>,Box<std::error::Error>> {
+fn get_default_config() -> Result<std::vec::Vec<u8>, Box<std::error::Error>> {
     let home = std::env::var("HOME")?;
-    Ok(format!("search-paths:
+    Ok(format!(
+        "search-paths:
   - {}
 exclude-paths:
-  - {}/bin", home, home).into_bytes())
+  - {}/bin",
+        home, home
+    )
+    .into_bytes())
 }
 
 fn get_or_create_data_dir(
     path: &::std::path::Path,
-) -> Result<::std::path::PathBuf,Box<std::error::Error>> {
+) -> Result<::std::path::PathBuf, Box<std::error::Error>> {
     use std::io::Write;
 
     if path.is_dir() {
@@ -48,7 +52,7 @@ fn get_or_create_data_dir(
     }
 
     if path.exists() {
-        return Err(Box::from(ConfigError::PathExists));
+        return Err(Box::from(Error::PathExists));
     }
 
     ::std::fs::create_dir(path)?;

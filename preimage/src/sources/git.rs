@@ -45,10 +45,7 @@ impl<'walk> RepoWalker<'walk> {
             Box::leak(iter) as *mut git2::Revwalk
         };
 
-        Ok(RepoWalker {
-            repo,
-            iter,
-        })
+        Ok(RepoWalker { repo, iter })
     }
 }
 

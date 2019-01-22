@@ -2,7 +2,7 @@
 =============================================
 
 The `preimage` utility maintains a database of hash-preimages. It will scan your
-hard drive for "hashable** content, compute the hashes, then store references to
+hard drive for "hashable" content, compute the hashes, then store references to
 where it can be found.
 
 **Why?** Rather than link a file by its location, you can **link to its content**.

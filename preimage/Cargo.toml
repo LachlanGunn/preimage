@@ -1,6 +1,6 @@
 [package]
 name = "preimage"
-version = "0.1.1-pre"
+version = "0.2.0"
 authors = ["Lachlan Gunn <lachlan@gunn.ee>"]
 description = """A tool to index files by hash.
 
@@ -19,7 +19,9 @@ edition = "2018"
 
 [dependencies]
 data-encoding = "^2.1"
-sha2 = "^0.7"
+digest = "^0.8"
+sha-1 = "^0.8"
+sha2 = "^0.8"
 walkdir = "^2.2"
 serde = "^1.0"
 serde_yaml = "^0.7"

@@ -32,11 +32,11 @@ pub fn walk_dir<S: crate::sinks::ObjectSink + Send + Sync + 'static>(
     dir: &::std::path::Path,
     sink: S,
     app: &crate::config::PreimageApp,
-) {
+) -> Result<(),String> {
     let stream = match Walker::new(dir.to_path_buf(), app.clone()) {
         Ok(w) => w,
-        Err(_) => {
-            return;
+        Err(e) => {
+            return Err(format!("{}", e));
         }
     };
 
@@ -48,6 +48,7 @@ pub fn walk_dir<S: crate::sinks::ObjectSink + Send + Sync + 'static>(
             })
             .or_else(|_| Err(())),
     );
+    Ok(())
 }
 
 impl<'walk> Stream for Walker<'walk> {
@@ -76,7 +77,9 @@ impl<'walk> Stream for Walker<'walk> {
             };
 
             if self.app.exclude_paths.contains(entry.path()) {
-                self.iter.skip_current_dir();
+                if entry.file_type().is_dir() {
+                    self.iter.skip_current_dir();
+                }
             } else if entry.file_type().is_dir()
                 && entry
                     .path()
@@ -93,7 +96,10 @@ impl<'walk> Stream for Walker<'walk> {
                     .parent()
                     .expect("Failed to get parent path")
                     .to_path_buf();
-                self.git_walker = Some(crate::sources::git::RepoWalker::new(parent_dir)?);
+                self.git_walker = match crate::sources::git::RepoWalker::new(parent_dir) {
+                    Ok(walker) => Some(walker),
+                    Err(_) => None,
+                };
             } else if is_hidden(&entry) {
                 if entry.file_type().is_dir() {
                     self.iter.skip_current_dir();

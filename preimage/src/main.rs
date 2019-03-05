@@ -28,13 +28,13 @@ fn main() -> Result<(), String> {
             Some(dir) => {
                 let sink = Sink::new(&app_config)
                     .or_else(|_| Err(String::from("Failed to open database.")))?;
-                sources::file::walk_dir(&std::path::PathBuf::from(dir), sink, &app_config);
+                sources::file::walk_dir(&std::path::PathBuf::from(dir), sink, &app_config)?;
             }
             None => {
                 for path in &app_config.search_paths {
                     let sink = Sink::new(&app_config)
                         .or_else(|_| Err(String::from("Failed to open database.")))?;
-                    sources::file::walk_dir(&path, sink, &app_config);
+                    sources::file::walk_dir(&path, sink, &app_config)?;
                 }
             }
         }

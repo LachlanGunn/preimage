@@ -1,6 +1,6 @@
 [package]
 name = "preimage"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Lachlan Gunn <lachlan@gunn.ee>"]
 description = """A tool to index files by hash.
 
